@@ -1,4 +1,4 @@
-package ru.arkhipov.MySecondTestAppSpringBoot.controller; // укажи свой пакет
+package ru.komogorova.MySecondTestAppSpringBoot.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.komogorova.MySecondTestAppSpringBoot.exception.UnsupportedCode;
 import ru.komogorova.MySecondTestAppSpringBoot.exception.ValidationFailed;
 import ru.komogorova.MySecondTestAppSpringBoot.model.*;
+import ru.komogorova.MySecondTestAppSpringBoot.service.ModifyRequestService;
 import ru.komogorova.MySecondTestAppSpringBoot.service.ModifyResponseService;
 import ru.komogorova.MySecondTestAppSpringBoot.service.ValidationService;
 import ru.komogorova.MySecondTestAppSpringBoot.util.DateTimeUtil;
-
 
 import java.util.Date;
 
@@ -26,16 +26,22 @@ public class MyController {
 
     private final ValidationService validationService;
     private final ModifyResponseService modifyResponseService;
+    private final ModifyRequestService modifyRequestService;
 
     @Autowired
     public MyController(ValidationService validationService,
-                        @Qualifier("ModifySystemTimeResponseService") ModifyResponseService modifyResponseService) {
+                        @Qualifier("ModifySystemTimeResponseService") ModifyResponseService modifyResponseService,
+                        ModifyRequestService modifyRequestService) {
         this.validationService = validationService;
         this.modifyResponseService = modifyResponseService;
+        this.modifyRequestService = modifyRequestService;
     }
 
     @PostMapping(value = "/feedback")
     public ResponseEntity<Response> feedback(@Valid @RequestBody Request request, BindingResult bindingResult) {
+
+
+        request.setService1ReceiveTime(System.currentTimeMillis());
 
         log.info("Incoming request: {}", request);
 
@@ -62,21 +68,21 @@ public class MyController {
             }
 
         } catch (ValidationFailed e) {
-            log.error("ValidationFailed caught: {}", e.getMessage()); // Доп. задание 2
+            log.error("ValidationFailed caught: {}", e.getMessage());
             response.setCode(Codes.FAILED);
             response.setErrorCode(ErrorCodes.VALIDATION_EXCEPTION);
             response.setErrorMessage(ErrorMessages.VALIDATION);
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 
         } catch (UnsupportedCode e) {
-            log.error("UnsupportedCode caught: {}", e.getMessage()); // Доп. задание 2
+            log.error("UnsupportedCode caught: {}", e.getMessage());
             response.setCode(Codes.FAILED);
             response.setErrorCode(ErrorCodes.UNSUPPORTED_EXCEPTION);
             response.setErrorMessage(ErrorMessages.UNSUPPORTED);
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
 
         } catch (Exception e) {
-            log.error("Unknown Exception caught: {}", e.getMessage()); // Доп. задание 2
+            log.error("Unknown Exception caught: {}", e.getMessage());
             response.setCode(Codes.FAILED);
             response.setErrorCode(ErrorCodes.UNKNOWN_EXCEPTION);
             response.setErrorMessage(ErrorMessages.UNKNOWN);
@@ -84,6 +90,8 @@ public class MyController {
         }
 
         modifyResponseService.modify(response);
+
+        modifyRequestService.modify(request);
 
         log.info("Final modified response: {}", response);
 

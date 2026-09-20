@@ -36,6 +36,7 @@ public class Request {
 
     private int templateId;
     private int productCode;
+    private Long service1ReceiveTime;
 
     private int smsCode;
     @Override
